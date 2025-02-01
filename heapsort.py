@@ -162,7 +162,7 @@ def setup_heapsort_interface(root, canvas, controls_frame, menu_frame, voltar_me
     for widget in controls_frame.winfo_children():
         widget.destroy()
     tk.Label(controls_frame, text="Quantidade de Números:").grid(row=0, column=0, padx=5)
-    num_scale = tk.Scale(controls_frame, from_=5, to=50, orient=tk.HORIZONTAL)
+    num_scale = tk.Scale(controls_frame, from_=5, to=30, orient=tk.HORIZONTAL)
     num_scale.set(10)
     num_scale.grid(row=0, column=1, padx=5)
     tk.Button(controls_frame, text="Gerar Nova Árvore", command=lambda: generate_new_array_hs(canvas, num_scale.get())).grid(row=1, column=0, padx=5, pady=5)
