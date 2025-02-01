@@ -44,62 +44,56 @@ def draw_tree_state(canvas, state):
     n = len(arr)
     cw = int(canvas['width'])
     ch = int(canvas['height'])
-    vertical_spacing = 60
-
-    # Constrói uma lista de níveis (nodes) e calcula as coordenadas de cada nó
-    nodes = []
-    nodes_coords = []
-    level = 0
-    i = 0
-    while i < n:
-        level_count = min(2**level, n - i)
-        level_nodes = arr[i:i+level_count]
-        nodes.append(level_nodes)
-        spacing = cw / (len(level_nodes) + 1)
-        y = vertical_spacing * (level + 1)
-        coords = []
-        for pos in range(len(level_nodes)):
-            x = spacing * (pos + 1)
-            coords.append((x, y))
-        nodes_coords.append(coords)
-        i += level_count
-        level += 1
-
-    # Desenha as arestas conectando nós pais aos seus filhos utilizando os índices do vetor
-    for L in range(len(nodes) - 1):
-        for pos, _ in enumerate(nodes[L]):
-            parent_index = (2**L - 1) + pos
-            parent_coord = nodes_coords[L][pos]
-            left_index = 2 * parent_index + 1
-            right_index = 2 * parent_index + 2
-            left_pos = left_index - (2**(L+1) - 1)
-            if left_pos >= 0 and left_pos < len(nodes[L+1]):
-                child_coord = nodes_coords[L+1][left_pos]
-                canvas.create_line(parent_coord[0], parent_coord[1], child_coord[0], child_coord[1])
-            right_pos = right_index - (2**(L+1) - 1)
-            if right_pos >= 0 and right_pos < len(nodes[L+1]):
-                child_coord = nodes_coords[L+1][right_pos]
-                canvas.create_line(parent_coord[0], parent_coord[1], child_coord[0], child_coord[1])
-
-    # Desenha os nós
-    for L, level_nodes in enumerate(nodes):
-        for pos, value in enumerate(level_nodes):
-            (x, y) = nodes_coords[L][pos]
-            r = 20
-            canvas.create_oval(x-r, y-r, x+r, y+r, fill="white", outline="black")
-            canvas.create_text(x, y, text=str(value), font=("Arial", 12))
-            overall_index = (2**L - 1) + pos
-            if state.get("current") is not None and state["current"] == overall_index:
-                canvas.create_text(x, y-30, text="C", font=("Arial", 12), fill="red")
-            if state.get("heapify_index") is not None and state["heapify_index"] == overall_index:
-                canvas.create_text(x, y+30, text="H", font=("Arial", 12), fill="blue")
-    canvas.create_text(cw/2, ch-20, text=state["msg"], font=("Arial", 14), fill="green")
+    top_margin = 20
+    bottom_margin = 50
+    depth = math.ceil(math.log2(n+1)) if n > 0 else 1
+    vertical_spacing = (ch - top_margin - bottom_margin) / (depth if depth > 0 else 1)
+    positions = {}
+    for level in range(depth):
+        start_index = 2**level - 1
+        end_index = min(n, 2**(level+1) - 1)
+        count = end_index - start_index
+        if count <= 0:
+            continue
+        for i in range(count):
+            index = start_index + i
+            # Distribui os nós uniformemente horizontalmente
+            x = cw * (i+1) / (count+1)
+            y = top_margin + level * vertical_spacing
+            positions[index] = (x, y)
+    for i in range(n):
+        parent_pos = positions.get(i)
+        left_index = 2 * i + 1
+        right_index = 2 * i + 2
+        if left_index < n:
+            child_pos = positions.get(left_index)
+            canvas.create_line(parent_pos[0], parent_pos[1], child_pos[0], child_pos[1])
+        if right_index < n:
+            child_pos = positions.get(right_index)
+            canvas.create_line(parent_pos[0], parent_pos[1], child_pos[0], child_pos[1])
+    r = 20
+    for i in range(n):
+        (x, y) = positions[i]
+        canvas.create_oval(x-r, y-r, x+r, y+r, fill="white", outline="black")
+        canvas.create_text(x, y, text=str(arr[i]), font=("Arial", 12))
+        if state.get("current") is not None and state["current"] == i:
+            canvas.create_text(x, y-30, text="C", font=("Arial", 12), fill="red")
+        if state.get("heapify_index") is not None and state["heapify_index"] == i:
+            canvas.create_text(x, y+30, text="H", font=("Arial", 12), fill="blue")
+    canvas.create_text(cw/2, ch - 10, text=state["msg"], font=("Arial", 14), fill="green")
 
 def generate_new_array_hs(canvas, num):
     global array_hs, steps_hs, current_step_hs
     array_hs = [random.randint(1, 999) for _ in range(num)]
     steps_hs = []
     current_step_hs = 0
+    depth = math.ceil(math.log2(num+1)) if num > 0 else 1
+    # Ajusta a altura do canvas conforme a profundidade da árvore
+    top_margin = 20
+    bottom_margin = 50
+    vertical_spacing = 80
+    new_height = top_margin + depth * vertical_spacing + bottom_margin
+    canvas.config(height=new_height)
     draw_initial_tree_hs(canvas)
     iniciar_button_hs.config(state=tk.NORMAL)
     next_button_hs.config(state=tk.DISABLED)
@@ -163,8 +157,8 @@ def show_history_hs():
 def setup_heapsort_interface(root, canvas, controls_frame, menu_frame, voltar_menu):
     global iniciar_button_hs, next_button_hs, prev_button_hs, history_button_hs, current_canvas
     menu_frame.pack_forget()
-    canvas.pack()
-    controls_frame.pack(pady=10)
+    canvas.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+    controls_frame.pack(side=tk.BOTTOM, pady=10)
     for widget in controls_frame.winfo_children():
         widget.destroy()
     tk.Label(controls_frame, text="Quantidade de Números:").grid(row=0, column=0, padx=5)
